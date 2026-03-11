@@ -66,7 +66,7 @@
 
 ```bash
 # Clonar repositorio
-git clone https://github.com/manu-alvarez/IAPVoiceAssistant.git
+git clone https://github.com/YourUsername/IAPVoiceAssistant.git
 cd IAPVoiceAssistant
 
 # Instalar dependencias
@@ -195,7 +195,7 @@ docker run -p 3000:3000 iap-voice-assistant
 
 ```bash
 # Clonar repositorio
-git clone https://github.com/manu-alvarez/IAPVoiceAssistant.git
+git clone https://github.com/YourUsername/IAPVoiceAssistant.git
 cd IAPVoiceAssistant
 
 # Instalar dependencias
@@ -263,9 +263,8 @@ Distribuido bajo la licencia MIT. Ver `LICENSE` para más información.
 
 ## 📞 Contacto
 
-- **Autor**: manu-alvarez
-- **Repositorio**: [github.com/manu-alvarez/IAPVoiceAssistant](https://github.com/manu-alvarez/IAPVoiceAssistant)
-- **Proyecto**: [IAP Voice Assistant](https://github.com/manu-alvarez/IAPVoiceAssistant)
+- **Repositorio**: GitHub
+- **Proyecto**: IAP Voice Assistant
 
 ---
 
