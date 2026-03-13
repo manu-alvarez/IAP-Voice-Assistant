@@ -10,6 +10,7 @@ venv.bak/
 # Keys & Auth
 credentials.json
 token.json
+msal_token.json
 secret.key
 *.pem
 *.key

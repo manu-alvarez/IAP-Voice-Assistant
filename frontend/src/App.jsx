@@ -35,6 +35,7 @@ const IconSmartphone = ({ className, style }) => (
 );
 import Orb3D from './components/Orb3D';
 import './index.css';
+import { ORB_BASE64 } from './OrbBase64';
 
 const API_KEY = 'iaputa_sk_7f3a9b2c1d4e5f6a8b9c0d1e2f3a4b5c';
 const UI_VERSION = '2.0.3-FIX-' + new Date().getTime();
@@ -402,13 +403,32 @@ function App() {
         {/* ── ORB AREA (contained) ── */}
         <div className="flex-1 relative flex items-center justify-center min-h-0">
           <div className={`orb-glow ${orbState}`} />
-          <div className={`w-[280px] h-[280px] md:w-[400px] md:h-[400px] orb-image-container ${orbState}`}>
-            <img 
-              src="/orb.png" 
-              alt="Living Orb" 
-              className="w-full h-full object-contain drop-shadow-2xl transition-all duration-1000 ease-in-out" 
-              style={{ filter: getHueRotation(emotionColor) }}
-            />
+          <div className={`orb-core-container ${orbState}`}>
+            {/* Main Plasma Core */}
+            <div className="orb-energy-layer main-plasma">
+              <img 
+                src={ORB_BASE64} 
+                alt="Plasma Orb" 
+                className="w-full h-full object-contain mix-blend-screen" 
+                style={{ filter: getHueRotation(emotionColor) }}
+              />
+            </div>
+            
+            {/* Secondary Energy Layer for Chaos/Glow */}
+            <div className="orb-energy-layer secondary-plasma">
+              <img 
+                src={ORB_BASE64} 
+                alt="Plasma Aura" 
+                className="w-full h-full object-contain mix-blend-screen opacity-50 scale-110" 
+                style={{ filter: `${getHueRotation(emotionColor)} blur(8px)` }}
+              />
+            </div>
+
+            {/* Chaotic Sparkle Layer */}
+            <div className="plasma-sparkle" />
+
+            {/* Central Energy Spark (Internal Light) */}
+            <div className="absolute w-24 h-24 bg-white rounded-full blur-3xl opacity-50 animate-pulse pointer-events-none" />
           </div>
 
           {/* Transcript overlay — only show system/error/user/vision, NOT bot text responses */}
@@ -487,7 +507,7 @@ function App() {
             </button>
           </div>
 
-          <div className="text-[8px] text-white/15 tracking-[0.4em] uppercase">IAPUTA OS — NUCLEAR INTERFACE v2.2</div>
+          <div className="text-[8px] text-white/15 tracking-[0.4em] uppercase">IAPUTA OS — PLASMA INTERFACE v2.3</div>
         </div>
 
         {/* ── MOBILE TOOLS DRAWER ── */}
