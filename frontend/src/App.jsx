@@ -517,7 +517,7 @@ function App() {
               <div className="w-8 h-1 rounded-full bg-white/20" />
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {TOOLS.map(t => (
+              {TOOLS.filter(t => t.id !== 'telegram').map(t => (
                 <button
                   key={t.id}
                   onClick={() => handleToolAction(t)}
