@@ -7,7 +7,7 @@ import json
 import logging
 
 from app.tools.toolbox import (
-    vision_eye, vision_webcam, analyze_vision_image,
+    vision_eye, vision_webcam,
     os_control_request,
     approve_and_run_script, execute_python
 )

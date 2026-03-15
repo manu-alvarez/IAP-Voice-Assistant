@@ -1,5 +1,4 @@
 import uuid
-import os
 import aiofiles
 import logging
 from fastapi import APIRouter, File, UploadFile, Request, HTTPException

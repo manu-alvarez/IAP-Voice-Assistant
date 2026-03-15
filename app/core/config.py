@@ -4,9 +4,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
+# Check if running in Docker using environment variable
+IN_DOCKER = os.environ.get("RUNNING_IN_DOCKER", "false").lower() == "true"
+APP_PREFIX = "/app" if IN_DOCKER else ""
+
+
 class Settings(BaseSettings):
     GROQ_API_KEY: str
-    FRONTEND_PORT: int = 8000
+    
+    # API Server Configuration
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8000
+    
+    # Allowed CORS Origins (comma-separated)
+    CORS_ORIGINS: str = "*"
+    
     OS_TYPE: str = platform.system()
 
     # Optional keys — only required if their features are enabled
@@ -38,5 +50,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Create required working directories on startup
-for folder in ["temp_audio", "temp_vision", "scripts"]:
+# Use /app/ prefix for Docker, or relative paths for local development
+prefix = "/app" if IN_DOCKER else "."
+for folder in [f"{prefix}/temp_audio", f"{prefix}/temp_vision", f"{prefix}/scripts"]:
     os.makedirs(folder, exist_ok=True)
