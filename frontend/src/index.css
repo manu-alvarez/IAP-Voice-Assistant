@@ -1,5 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,326 +9,307 @@
   body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     color: #f0f0ff;
     -webkit-font-smoothing: antialiased;
-    background-color: #020205; /* Deeper black */
+    background-color: #000;
   }
 }
 
 @layer components {
-  .interactive { pointer-events: auto; }
-
-  /* ── Cinematic Volumetric Fog Background ── */
-  .cosmic-bg {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: #050510;
-    z-index: -2;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  /* Fog Layer 1: Dense Smoke */
-  .cosmic-bg::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: 
-      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(100, 100, 150, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 60%);
-    filter: blur(100px);
-    animation: fog-drift 35s ease-in-out infinite alternate;
-    opacity: 0.8;
-  }
-
-  /* Fog Layer 2: Moving tendrils */
-  .cosmic-bg::after {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: url("https://www.transparenttextures.com/patterns/asfalt-dark.png");
-    opacity: 0.35;
-    mix-blend-mode: overlay;
-    animation: fog-drift 50s linear infinite;
-  }
-
-  @keyframes fog-drift {
-    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-    50% { transform: translate(-3%, -5%) scale(1.05) rotate(2deg); }
-    100% { transform: translate(2%, 4%) scale(1) rotate(-2deg); }
-  }
-
-  /* Fog Layer 3: Dynamic Color Veils */
-  .cosmic-bg::before {
-    background: 
-      radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--orb-color, rgba(168, 85, 247, 0.15)) 0%, transparent 50%),
-      radial-gradient(circle at 20% 30%, rgba(20, 20, 50, 0.4) 0%, transparent 60%),
-      radial-gradient(circle at 80% 70%, rgba(40, 20, 60, 0.4) 0%, transparent 60%);
-    opacity: 0.9;
-    animation: fog-drift 25s ease-in-out infinite alternate;
-  }
-
-  /* Reactive Background States */
-  .cosmic-bg.speaking { filter: saturate(1.5) brightness(1.1); }
-  .cosmic-bg.listening { filter: saturate(2) hue-rotate(-10deg); }
-
-  /* Atmospheric Overlay (Deep Fog / Vignette) */
-  .cosmic-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: 
-      radial-gradient(circle at 50% 50%, transparent 10%, rgba(0, 0, 0, 0.8) 70%, #000 100%),
-      url("https://www.transparenttextures.com/patterns/dark-matter.png");
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.9;
-    transition: all 1.5s ease;
-  }
-
-  /* ── Glass Morphism v3 (Mystic Tint) ── */
-  .glass {
-    background: rgba(10, 5, 25, 0.55);
-    backdrop-filter: blur(32px) saturate(1.8);
-    border: 1px solid rgba(168, 85, 247, 0.15);
-    box-shadow: 
-      0 12px 48px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  }
-
-  .glass-subtle {
-    background: rgba(15, 10, 30, 0.35);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(255, 255, 255, 0.02);
-  }
-
-  /* ── The Conscious Orb (Nuclear CSS) ── */
-  /* ───── ORB CORE (Plasma System) ───── */
-  .orb-core-container {
+  .premium-container {
     position: relative;
-    width: 320px;
-    height: 320px;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at center, #0a0a1f 0%, #000 100%);
+  }
+
+  .ambient-background {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+    filter: blur(60px);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .top-info-bar {
+    position: relative;
+    z-index: 10;
+    padding: 2rem;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .main-interface {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 350px 1fr 350px;
+    gap: 2rem;
+    padding: 0 4rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .right-panel {
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    padding-left: 2rem;
+  }
+
+  .panel-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    color: #fff;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .plugins-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .plugin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .plugin-label {
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.05em;
+  }
+
+  .plugin-status {
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .orb-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .neural-title-v7 {
+    margin-top: -50px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 2.5rem;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
+  }
+
+  .interface-footer {
+    position: relative;
+    z-index: 10;
+    padding: 3rem;
+  }
+
+  .controls-center {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
-    transition: all 1s ease-in-out;
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
   }
 
-  @media (min-width: 768px) {
-    .orb-core-container {
-      width: 480px;
-      height: 480px;
-    }
-  }
-
-  .orb-energy-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-
-  .main-plasma {
-    animation: orb-spin-slow 15s linear infinite, orb-pulse-depth 3s ease-in-out infinite alternate;
-    filter: drop-shadow(0 0 50px var(--orb-color)) contrast(1.2) brightness(1.1);
-  }
-
-  .secondary-plasma {
-    animation: orb-spin-reverse 10s linear infinite, orb-breath 2s ease-in-out infinite alternate;
-    opacity: 0.6;
-    mix-blend-mode: screen;
-  }
-
-  /* Extra layer for chaotic energy */
-  .plasma-sparkle {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, var(--orb-color) 0%, transparent 60%);
-    mix-blend-mode: color-dodge;
-    animation: orb-vibrate-plasma 0.1s linear infinite;
-    opacity: 0.2;
-    pointer-events: none;
-  }
-
-  /* Animations */
-  @keyframes orb-spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes orb-spin-reverse {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
-  }
-
-  @keyframes orb-pulse-depth {
-    0% { transform: scale(1); filter: brightness(1) contrast(1) blur(0px); }
-    100% { transform: scale(1.12); filter: brightness(1.5) contrast(1.3) blur(2px); }
-  }
-
-  @keyframes orb-breath {
-    0% { transform: scale(0.9) rotate(0deg); opacity: 0.3; }
-    50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
-    100% { transform: scale(0.9) rotate(360deg); opacity: 0.3; }
-  }
-
-  /* States Transition */
-  .orb-core-container.listening {
-    transform: scale(1.15);
-    filter: contrast(1.3) saturate(1.4);
-  }
-
-  .orb-core-container.speaking {
-    animation: orb-vibrate-plasma 0.25s linear infinite;
-  }
-
-  @keyframes orb-vibrate-plasma {
-    0% { transform: translate(0, 0) scale(1.05); }
-    25% { transform: translate(-2px, 2px) scale(1.05); }
-    50% { transform: translate(2px, -2px) scale(1.05); }
-    75% { transform: translate(-2px, -2px) scale(1.05); }
-    100% { transform: translate(2px, 2px) scale(1.05); }
-  }
-
-  .orb-glow {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 650px; height: 650px;
-    background: radial-gradient(circle, var(--orb-color, rgba(168, 85, 247, 0.25)) 0%, transparent 70%);
-    filter: blur(120px);
-    z-index: -1;
-    opacity: 0.6;
-    animation: orb-halobreath 6s ease-in-out infinite;
-    pointer-events: none;
-    transition: all 1.5s ease;
-  }
-
-  @keyframes orb-halobreath {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
-  }
-
-  .orb-glow.speaking { width: 900px; height: 900px; opacity: 1.0; filter: blur(140px); }
-  .orb-glow.listening { animation: orb-alert-glow 0.6s ease-in-out infinite; filter: blur(80px); }
-
-  @keyframes orb-alert-glow {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.9; background: radial-gradient(circle, rgba(255, 60, 60, 0.3) 0%, transparent 70%); }
-  }
-
-  @keyframes orb-pulse-alert {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.9; background: radial-gradient(circle, rgba(255, 60, 60, 0.3) 0%, transparent 70%); }
-  }
-
-  /* ── Recording Glow ── */
-  .recording-glow {
-    box-shadow: 0 0 50px rgba(255, 40, 40, 0.6), 0 0 100px rgba(255, 40, 40, 0.3);
-    border-color: #ff2828 !important;
-  }
-
-  /* ── Tool Cards (Mystic energy) ── */
-  .tool-btn {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.03) 0%, rgba(168, 85, 247, 0.01) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.1);
-    border-radius: 12px;
-    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  .mic-trigger {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-  .tool-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.25) 0%, transparent 80%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  .tool-btn:hover::before { opacity: 1; }
-  .tool-btn:hover {
-    border-color: rgba(168, 85, 247, 0.4);
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 15px 45px -10px rgba(168, 85, 247, 0.4);
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
-  /* ── Transcript Bubble (Mystic Glass) ── */
-  .transcript-bubble {
-    background: rgba(8, 5, 15, 0.8);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(168, 85, 247, 0.1);
-    border-radius: 24px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  .mic-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
   }
 
-  /* ── Mic Button (Energy Core style) ── */
-  .mic-btn {
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(5, 5, 12, 0.85) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-  .mic-btn:hover {
-    border-color: rgba(168, 85, 247, 0.6);
-    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
-    transform: scale(1.05);
-  }
-  .mic-btn.active {
-    border-color: #ff2828;
-    box-shadow: 0 0 60px rgba(255, 40, 40, 0.5);
-    animation: core-pulse 2s infinite;
-  }
-  @keyframes core-pulse {
-    0%, 100% { transform: scale(1); filter: brightness(1); }
-    50% { transform: scale(1.1); filter: brightness(1.3); }
+  .mic-trigger.active {
+    background: rgba(255, 60, 60, 0.2);
+    border-color: #ff3c3c;
+    box-shadow: 0 0 50px rgba(255, 60, 60, 0.2);
+    animation: pulse-red 2s infinite;
   }
 
-  .cmd-input {
-    background: rgba(12, 8, 20, 0.7);
-    border: 1px solid rgba(168, 85, 247, 0.15);
+  @keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(255, 60, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0); }
+  }
+
+  .cmd-line {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .prompt {
+    color: #ff3c3c;
+    font-weight: 800;
+  }
+
+  .cmd-line input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    width: 100%;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+
+  .system-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    opacity: 0.4;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .main-interface {
+    grid-template-columns: 250px 1fr 250px;
+    padding: 0 2rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  body {
+    overflow: auto;
+  }
+  
+  .premium-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .main-interface {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.5rem;
+    gap: 3rem;
+  }
+
+  .side-panel {
+    order: 2;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 14px 20px;
-    transition: all 0.4s ease;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-  }
-  .cmd-input:focus {
-    border-color: rgba(168, 85, 247, 0.5);
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
-    background: rgba(15, 10, 25, 0.85);
+    background: rgba(255, 255, 255, 0.02);
   }
 
-  .status-badge {
-    background: rgba(168, 85, 247, 0.1);
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    color: #c084fc;
-    font-weight: 600;
+  .left-panel { order: 3; }
+  .right-panel { 
+    order: 2; 
+    border-left: none;
+    padding-left: 1.5rem;
   }
 
-  /* ── Transgressive Typography ── */
-  .transgressive-text {
-    font-family: 'Space Grotesk', sans-serif;
-    letter-spacing: -0.05em;
-    font-weight: 900;
-    text-transform: uppercase;
-    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.4) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4));
+  .center-panel {
+    order: 1;
+    min-height: 400px;
   }
 
-  .neon-cyan { text-shadow: 0 0 20px rgba(0, 212, 255, 0.6); color: #00d4ff; }
-  .neon-purple { text-shadow: 0 0 20px rgba(168, 85, 247, 0.6); color: #a855f7; }
+  .neural-title-v7 {
+    font-size: 1.8rem;
+    margin-top: -30px;
+    text-align: center;
+  }
 
-  /* ── Tool Drawer Fixes ── */
-  .bottom-bar {
-    background: rgba(5, 5, 10, 0.95);
-    backdrop-filter: blur(40px);
+  .top-info-bar {
+    padding: 1.5rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .interface-footer {
+    padding: 2rem 1rem;
+    position: sticky;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    pointer-events: auto;
+  }
+
+  .controls-center {
+    gap: 1rem;
+  }
+
+  .mic-trigger {
+    width: 60px;
+    height: 60px;
+  }
+
+  .cmd-line {
+    padding: 0.8rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .neural-title-v7 {
+    font-size: 1.4rem;
+  }
+  
+  .main-interface {
+    gap: 2rem;
   }
 }
