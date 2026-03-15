@@ -132,10 +132,38 @@ function App() {
     }
   };
 
-  // ═══ VISION: Capture screenshot via getDisplayMedia ═══
+  // ═══ VISION: Capture screenshot via getDisplayMedia (Fallback to Gallery on Mobile) ═══
   const captureScreenshot = async () => {
     try {
       setOrbState('processing');
+      
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isSupported = navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia;
+
+      // Pantallas móviles no soportan getDisplayMedia nativo, usamos un selector de archivos como fallback
+      if (isMobile || !isSupported) {
+        setTranscript({ type: 'system', text: '◈ SELECCIONA UNA CAPTURA DE TU GALERÍA...' });
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) {
+            setOrbState('ready');
+            setTranscript({ type: 'system', text: '◈ OPERACIÓN CANCELADA.' });
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            setTranscript({ type: 'system', text: '◈ ANALIZANDO IMAGEN...' });
+            await sendVisionToBackend(event.target.result, 'screenshot');
+          };
+          reader.readAsDataURL(file);
+        };
+        input.click();
+        return;
+      }
+
       setTranscript({ type: 'system', text: '◈ SELECCIONA LA PANTALLA A CAPTURAR...' });
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: 'screen' } });
       const track = stream.getVideoTracks()[0];
