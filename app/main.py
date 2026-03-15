@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Tareas en segundo plano
-from app.services.telegram_service import telegram_polling_loop
-from app.services.memory_service import cleanup_task
+from app.infrastructure.tools.telegram_tool import telegram_polling_loop
+from app.application.use_cases.memory_service import cleanup_task
 
 background_tasks = set()
 

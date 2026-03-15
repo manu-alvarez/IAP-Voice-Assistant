@@ -1,7 +1,7 @@
 import uuid
 import aiofiles
 import logging
-from fastapi import APIRouter, File, UploadFile, Request, HTTPException
+from fastapi import APIRouter, File, UploadFile, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -10,17 +10,21 @@ from app.core.config import settings, APP_PREFIX
 from app.application.use_cases.chat_use_case import ChatUseCase
 from app.infrastructure.llm.groq_adapter import GroqAdapter
 from app.infrastructure.audio.tts_stt_adapter import GroqEdgeAudioAdapter
-from app.services.memory_service import clear_history
+from app.application.use_cases.memory_service import clear_history
 from app.domain.entities import AIResponse
-from app.tools.toolbox import analyze_vision_image
+from app.infrastructure.tools.toolbox import analyze_vision_image
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-llm_port = GroqAdapter()
-audio_port = GroqEdgeAudioAdapter()
-chat_usecase = ChatUseCase(llm_adapter=llm_port, audio_adapter=audio_port)
+def get_chat_usecase() -> ChatUseCase:
+    llm_port = GroqAdapter()
+    audio_port = GroqEdgeAudioAdapter()
+    return ChatUseCase(llm_adapter=llm_port, audio_adapter=audio_port)
+
+def get_audio_adapter() -> GroqEdgeAudioAdapter:
+    return GroqEdgeAudioAdapter()
 
 def _verify_api_key(request: Request):
     expected = settings.IAPUTA_API_KEY
@@ -43,7 +47,7 @@ class VisionAnalyzeRequest(BaseModel):
     prompt: str = None
 
 @router.post("/api/voice-command", response_model=AIResponse)
-async def voice_command_endpoint(request: Request, audio_file: UploadFile = File(...)):
+async def voice_command_endpoint(request: Request, audio_file: UploadFile = File(...), chat_usecase: ChatUseCase = Depends(get_chat_usecase)):
     _verify_api_key(request)
     try:
         content = await audio_file.read()
@@ -66,7 +70,7 @@ async def voice_command_endpoint(request: Request, audio_file: UploadFile = File
         return JSONResponse(status_code=500, content={"transcript": "Error de audio", "error": str(e), "emotion": "error"})
 
 @router.post("/api/text-command", response_model=AIResponse)
-async def text_command_endpoint(request: Request, body: TextCommandRequest):
+async def text_command_endpoint(request: Request, body: TextCommandRequest, chat_usecase: ChatUseCase = Depends(get_chat_usecase)):
     _verify_api_key(request)
     try:
         res = await chat_usecase.execute_text(body.text)
@@ -78,13 +82,13 @@ async def text_command_endpoint(request: Request, body: TextCommandRequest):
         return JSONResponse(status_code=500, content={"transcript": "Error interceptado", "error": str(e), "emotion": "error"})
 
 @router.post("/api/vision-analyze")
-async def vision_analyze_endpoint(request: Request, body: VisionAnalyzeRequest):
+async def vision_analyze_endpoint(request: Request, body: VisionAnalyzeRequest, audio_adapter: GroqEdgeAudioAdapter = Depends(get_audio_adapter)):
     _verify_api_key(request)
     try:
         analysis, vision_url = await analyze_vision_image(body.image, body.prompt, body.source)
         audio_url = None
         try:
-            audio_url = await audio_port.generate_speech(analysis)
+            audio_url = await audio_adapter.generate_speech(analysis)
         except Exception as tts_err:
             logger.warning(f"TTS failed: {tts_err}")
 

@@ -1,6 +1,6 @@
 from app.domain.entities import AIResponse
 from app.application.interfaces.ai_port import LLMPort, AudioPort
-from app.services.memory_service import save_message, get_recent_history
+from app.application.use_cases.memory_service import save_message, get_recent_history
 
 class ChatUseCase:
     def __init__(self, llm_adapter: LLMPort, audio_adapter: AudioPort = None):

@@ -15,8 +15,8 @@ from app.core.groq_client import groq_client
 from app.core.config import settings
 from app.core.prompts import SYSTEM_PROMPT
 from app.application.interfaces.ai_port import LLMPort
-from app.tools.toolbox import TOOLS_SCHEMA
-from app.services.tool_dispatcher import handle_tool_call
+from app.infrastructure.tools.toolbox import TOOLS_SCHEMA
+from app.application.use_cases.tool_dispatcher import handle_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class GroqAdapter(LLMPort):
         user_lower = user_text.lower()
         if any(w in user_lower for w in ["hotmail", "correo", "email", "mensajes"]):
             try:
-                from app.tools.hotmail_tool import hotmail_executor
+                from app.infrastructure.tools.hotmail_tool import hotmail_executor
                 hot_res, _ = await hotmail_executor('read', {'limit': 3})
                 pre_injected_data = f"\n\n[DATOS REALES HOTMAIL]:\n{hot_res}"
             except Exception: pass

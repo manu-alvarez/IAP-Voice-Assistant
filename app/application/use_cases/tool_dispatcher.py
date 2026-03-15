@@ -6,15 +6,15 @@ Clean version: No WhatsApp, no duplicates.
 import json
 import logging
 
-from app.tools.toolbox import (
+from app.infrastructure.tools.toolbox import (
     vision_eye, vision_webcam,
     os_control_request,
     approve_and_run_script, execute_python
 )
-from app.tools.google_tools import google_executor
-from app.tools.hotmail_tool import hotmail_executor
-from app.tools.search_tools import unified_search
-from app.tools.telegram_tool import send_telegram, get_telegram_updates
+from app.infrastructure.tools.google_tools import google_executor
+from app.infrastructure.tools.hotmail_tool import hotmail_executor
+from app.infrastructure.tools.search_tools import unified_search
+from app.infrastructure.tools.telegram_tool import send_telegram, get_telegram_updates
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ async def handle_tool_call(call):
         return await execute_python(args.get("code"))
 
     elif name == "get_current_time":
-        from app.tools.toolbox import get_current_time
+        from app.infrastructure.tools.toolbox import get_current_time
         return await get_current_time()
 
     elif name == "telegram_send":
