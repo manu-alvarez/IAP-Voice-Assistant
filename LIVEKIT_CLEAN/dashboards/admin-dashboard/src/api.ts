@@ -26,3 +26,8 @@ export const getRestaurantInfo = () => api.get('/restaurant');
 export const updateRestaurantInfo = (data: any) => api.put('/restaurant', data);
 
 export const getCalls = (limit = 50) => api.get('/calls', { params: { limit } });
+
+export const getMenu = (category?: string, available_only = true) => api.get('/menu', { params: { category, available_only } });
+export const createMenuItem = (data: any) => api.post('/menu', data);
+export const updateMenuItem = (id: number, data: any) => api.put(`/menu/${id}`, data);
+export const deleteMenuItem = (id: number) => api.delete(`/menu/${id}`);

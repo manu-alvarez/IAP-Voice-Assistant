@@ -96,6 +96,25 @@ class ReservationCreate(BaseModel):
     notes: str = ""
 
 
+class MenuItemCreate(BaseModel):
+    name: str
+    description: str = ""
+    category: str = "principal"
+    price: float = 0.0
+    allergens: str = ""
+    is_available: bool = True
+    is_daily_special: bool = False
+
+
+class MenuItemUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    price: Optional[float] = None
+    allergens: Optional[str] = None
+    is_available: Optional[bool] = None
+    is_daily_special: Optional[bool] = None
+
 class LLMConfigUpdate(BaseModel):
     model_name: Optional[str] = None
     voice: Optional[str] = None
@@ -435,6 +454,42 @@ def update_table(table_id: int, table: TableUpdate):
 @app.delete("/api/tables/{table_id}")
 def delete_table(table_id: int):
     db.delete_table(table_id)
+    return {"status": "success"}
+
+
+# ---------------------------------------------------------------------------
+# Menu API Routes
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/menu")
+def get_menu(category: Optional[str] = None, available_only: bool = True):
+    return db.get_menu(category=category, available_only=available_only)
+
+
+@app.post("/api/menu")
+def create_menu_item(item: MenuItemCreate):
+    item_id = db.create_menu_item(
+        name=item.name,
+        description=item.description,
+        category=item.category,
+        price=item.price,
+        allergens=item.allergens,
+        is_available=item.is_available,
+        is_daily_special=item.is_daily_special,
+    )
+    return {"id": item_id}
+
+
+@app.put("/api/menu/{item_id}")
+def update_menu_item(item_id: int, item: MenuItemUpdate):
+    db.update_menu_item(item_id, **item.model_dump(exclude_unset=True))
+    return {"status": "success"}
+
+
+@app.delete("/api/menu/{item_id}")
+def delete_menu_item(item_id: int):
+    db.delete_menu_item(item_id)
     return {"status": "success"}
 
 

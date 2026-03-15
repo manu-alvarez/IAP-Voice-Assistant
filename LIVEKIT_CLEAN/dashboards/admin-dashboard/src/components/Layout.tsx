@@ -13,6 +13,7 @@ import {
     PhoneInTalk as CallsIcon,
     Settings as SettingsIcon,
     Restaurant as RestaurantIcon,
+    MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 260;
@@ -21,6 +22,7 @@ const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Reservas', icon: <ReservationsIcon />, path: '/reservations' },
     { text: 'Mesas', icon: <TablesIcon />, path: '/tables' },
+    { text: 'Carta', icon: <MenuBookIcon />, path: '/menu' },
     { text: 'Llamadas IA', icon: <CallsIcon />, path: '/calls' },
     { text: 'Configuración', icon: <SettingsIcon />, path: '/settings' },
 ];
