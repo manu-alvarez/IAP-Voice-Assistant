@@ -112,8 +112,8 @@ export default function MenuPage() {
 
     const stats = {
         total: items.length,
-        available: items.filter(i => i.is_available).length,
-        specials: items.filter(i => i.is_daily_special).length,
+        available: items.filter(i => Boolean(i.is_available)).length,
+        specials: items.filter(i => Boolean(i.is_daily_special)).length,
         categories: new Set(items.map(i => i.category)).size,
     };
 
@@ -212,11 +212,11 @@ export default function MenuPage() {
                             </TableRow>
                         ) : (
                             items.map(item => (
-                                <TableRow key={item.id} sx={{ opacity: item.is_available ? 1 : 0.5 }}>
+                                <TableRow key={item.id} sx={{ opacity: Boolean(item.is_available) ? 1 : 0.5 }}>
                                     <TableCell>
                                         <Box>
                                             <Typography sx={{ fontWeight: 600 }}>
-                                                {item.is_daily_special && <StarIcon sx={{ fontSize: 16, color: '#f59e0b', mr: 0.5, verticalAlign: 'text-bottom' }} />}
+                                                {Boolean(item.is_daily_special) && <StarIcon sx={{ fontSize: 16, color: '#f59e0b', mr: 0.5, verticalAlign: 'text-bottom' }} />}
                                                 {item.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -241,9 +241,9 @@ export default function MenuPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Chip
-                                            label={item.is_available ? 'Disponible' : 'No disponible'}
+                                            label={Boolean(item.is_available) ? 'Disponible' : 'No disponible'}
                                             size="small"
-                                            color={item.is_available ? 'success' : 'default'}
+                                            color={Boolean(item.is_available) ? 'success' : 'default'}
                                         />
                                     </TableCell>
                                     <TableCell align="right">
