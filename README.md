@@ -2,6 +2,11 @@
 
 Este proyecto ha sido refactorizado aplicando **Clean Architecture (Ports & Adapters)**, integrado con React/Vite/MUI M3 en el frontend, y dockerizado para su despliegue inmutable en **VPS Producción**.
 
+## Puertos de Acceso
+- **Frontend (HTTP)**: http://localhost:8080
+- **Frontend (HTTPS)**: https://localhost:8443 (requiere certificados)
+- **Backend API**: http://localhost:8000
+
 ## Requisitos Previos (VPS)
 - Docker y Docker Compose instalados.
 - Un servidor VPS con Linux (Ubuntu Server recomendado).
@@ -31,9 +36,10 @@ Este proyecto ha sido refactorizado aplicando **Clean Architecture (Ports & Adap
    docker-compose up -d --build
    ```
 
-5. **Auditoría UI y Logs**:
-   - Abre en el navegador la IP del servidor en el puerto 8000.
-   - Lee los logs en tiempo real para observar el núcleo de IA:
+5. **Acceder a la Aplicación**:
+   - **Frontend**: Abre http://localhost:8080 en tu navegador
+   - **API Health**: http://localhost:8000/health
+   - **Logs del Backend**:
    ```bash
    docker-compose logs -f iaputa-backend
    ```

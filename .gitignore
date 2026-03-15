@@ -18,6 +18,8 @@ secret.key
 # Temp files
 temp_audio/
 temp_vision/
+temp_transfer/
+temp_github/
 scripts/dynamic_*
 __pycache__/
 *.py[cod]
@@ -46,3 +48,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+frontend/.env

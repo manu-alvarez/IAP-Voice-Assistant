@@ -1,28 +1,30 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  iaputa-backend:
-    build: .
-    container_name: iaputa-os-core
-    ports:
-      - "8006:8000"
-    env_file:
-      - .env
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    restart: always
+    network_mode: "host"
     volumes:
-      - ./temp_audio:/app/temp_audio
-      - ./temp_vision:/app/temp_vision
-    restart: unless-stopped
-    
-  iaputa-frontend:
+      - ./livekit-server/livekit.yaml:/etc/livekit.yaml
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    network_mode: "host"
+    command: redis-server --port 6380
+
+  agent:
     build: 
-      context: ./frontend
+      context: ./agent
       dockerfile: Dockerfile
-    container_name: iaputa-os-frontend
-    ports:
-      - "8080:80"
-      - "8443:443"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
-    restart: unless-stopped
+    restart: always
+    network_mode: "host"
     depends_on:
-      - iaputa-backend
+      - livekit
+    environment:
+      - LIVEKIT_URL=ws://127.0.0.1:7880
+    env_file:
+      - ./agent/.env
+

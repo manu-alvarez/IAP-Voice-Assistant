@@ -353,7 +353,10 @@ function App() {
             {/* The Animated Plasma Orb */}
             <NeuralOrb audioLevel={volume} orbState={orbState} />
             
-            <div className="neural-title-v7 mt-8">CENTRAL DE INTELIGENCIA V7.0</div>
+            <div className="text-center mt-8">
+              <div className="neural-title-v7">IAPuta OS:</div>
+              <div className="text-white/50 text-sm tracking-[0.3em] mt-2 uppercase font-mono">Welcome to the Next Level</div>
+            </div>
 
             {/* Transcript overlay — only show system/error/user/vision, NOT bot text responses */}
             {transcript && (transcript.type === 'system' || transcript.type === 'error' || transcript.type === 'user' || visionImage) && (

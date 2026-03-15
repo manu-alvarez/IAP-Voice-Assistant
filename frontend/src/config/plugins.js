@@ -17,5 +17,4 @@ export const TOOLS = [
   { id: 'search', icon: IconGlobe, color: '#3b82f6', label: 'Buscar', sub: 'Tavily AI', cmd: 'Busca en internet últimas noticias de IA' },
   { id: 'calendar', icon: IconCalendar, color: '#10b981', label: 'Agenda', sub: 'Google', cmd: '¿Qué tengo hoy en mi Google Calendar?' },
   { id: 'email', icon: IconMail, color: '#0078d4', label: 'Correo', sub: 'Outlook', cmd: 'Léeme mis últimos correos de Hotmail' },
-  { id: 'telegram', icon: IconSend, color: '#0ea5e9', label: 'Telegram', sub: 'Bot API', cmd: 'Envíame un mensaje por Telegram' },
 ];

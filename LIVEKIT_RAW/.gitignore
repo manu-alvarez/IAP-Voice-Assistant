@@ -1,0 +1,53 @@
+# Dependencies
+agent/venv/
+agent/.venv/
+agent/server_venv/
+frontend/node_modules/
+dashboard/node_modules/
+dev-dashboard/node_modules/
+**/node_modules/
+
+# Build output
+frontend/dist/
+dashboard/dist/
+dev-dashboard/dist/
+**/dist/
+*.tsbuildinfo
+
+# Environment files with secrets
+agent/.env
+frontend/.env
+dashboard/.env
+dev-dashboard/.env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Database
+agent/restaurant.db
+agent/restaurant.db-*
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+agent/livekit_agent.db
+agent/__pycache__/
+
+# Cache
+.ruff_cache/
+*.pyc
+__pycache__/
+
+# Local scripts/utilities
+agent/check_env.py
+agent/add_gemini.py
