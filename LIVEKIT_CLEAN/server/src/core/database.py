@@ -142,10 +142,25 @@ class RestaurantDB:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 
+                CREATE TABLE IF NOT EXISTS menu_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    description TEXT DEFAULT '',
+                    category TEXT NOT NULL DEFAULT 'principal' CHECK(category IN (
+                        'entrante','principal','postre','bebida','tapa','especial'
+                    )),
+                    price REAL DEFAULT 0.0,
+                    allergens TEXT DEFAULT '',
+                    is_available BOOLEAN DEFAULT 1,
+                    is_daily_special BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_reservations_date ON reservations(date);
                 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
                 CREATE INDEX IF NOT EXISTS idx_call_log_started ON call_log(started_at);
                 CREATE INDEX IF NOT EXISTS idx_pipeline_configs_active ON pipeline_configs(is_active);
+                CREATE INDEX IF NOT EXISTS idx_menu_items_category ON menu_items(category);
                 """
             )
 
@@ -214,6 +229,27 @@ class RestaurantDB:
                     (default_prompt,),
                 )
                 logger.info("Seeded default LLM config")
+
+            # Seed menu items
+            if conn.execute("SELECT COUNT(*) AS c FROM menu_items").fetchone()["c"] == 0:
+                default_menu = [
+                    ('Ensalada Mediterránea', 'Tomate, pepino, aceitunas, queso feta y vinagreta de limón', 'entrante', 9.50, 'lácteos', 1, 0),
+                    ('Croquetas de Jamón Ibérico', 'Croquetas caseras crujientes con bechamel suave', 'entrante', 8.00, 'gluten,lácteos', 1, 0),
+                    ('Gazpacho Andaluz', 'Sopa fría de tomate, pimiento y pepino', 'entrante', 7.00, '', 1, 0),
+                    ('Lubina a la Plancha', 'Lubina fresca con verduras de temporada y aceite de oliva virgen', 'principal', 18.50, 'pescado', 1, 0),
+                    ('Paella Valenciana', 'Arroz con pollo, judías verdes, garrofón y azafrán', 'principal', 16.00, '', 1, 0),
+                    ('Solomillo de Ternera', 'Solomillo con reducción de Pedro Ximénez y patatas al horno', 'principal', 22.00, '', 1, 0),
+                    ('Risotto de Setas', 'Arroz cremoso con setas de temporada y parmesano', 'principal', 14.50, 'lácteos,gluten', 1, 0),
+                    ('Tiramisú Casero', 'Bizcocho de café con mascarpone y cacao', 'postre', 7.50, 'gluten,lácteos,huevo', 1, 0),
+                    ('Tarta de Queso', 'Tarta horneada con base de galleta y coulis de frutos rojos', 'postre', 7.00, 'gluten,lácteos,huevo', 1, 0),
+                    ('Sangría de la Casa', 'Vino tinto con frutas de temporada y especias', 'bebida', 5.00, '', 1, 0),
+                    ('Agua Mineral', 'Botella 750ml', 'bebida', 2.50, '', 1, 0),
+                ]
+                conn.executemany(
+                    "INSERT INTO menu_items (name, description, category, price, allergens, is_available, is_daily_special) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    default_menu,
+                )
+                logger.info("Seeded %d default menu items", len(default_menu))
 
             # Seed pipeline profiles
             if conn.execute("SELECT COUNT(*) AS c FROM pipeline_configs").fetchone()["c"] == 0:
@@ -745,6 +781,20 @@ class RestaurantDB:
         finally:
             conn.close()
 
+    def get_recent_calls(self, minutes: int = 60) -> list[dict]:
+        """Get calls from the last N minutes for short-term memory injection."""
+        conn = self._get_conn()
+        try:
+            return [
+                dict(r)
+                for r in conn.execute(
+                    "SELECT * FROM call_log WHERE started_at >= datetime('now', ? || ' minutes') ORDER BY started_at DESC",
+                    (f"-{minutes}",),
+                ).fetchall()
+            ]
+        finally:
+            conn.close()
+
     # ------------------------------------------------------------------
     # Stats
     # ------------------------------------------------------------------
@@ -792,6 +842,61 @@ class RestaurantDB:
                 "reservations_next_7_days": next_7_days["c"],
                 "total_calls": total_calls["c"],
             }
+        finally:
+            conn.close()
+
+
+    # ------------------------------------------------------------------
+    # Menu Items
+    # ------------------------------------------------------------------
+
+    def get_menu(self, category: Optional[str] = None, available_only: bool = True) -> list[dict]:
+        conn = self._get_conn()
+        try:
+            query = "SELECT * FROM menu_items WHERE 1=1"
+            params: list = []
+            if available_only:
+                query += " AND is_available = 1"
+            if category:
+                query += " AND category = ?"
+                params.append(category)
+            query += " ORDER BY category, name"
+            return [dict(r) for r in conn.execute(query, params).fetchall()]
+        finally:
+            conn.close()
+
+    def create_menu_item(self, name: str, description: str, category: str, price: float,
+                         allergens: str = "", is_available: bool = True, is_daily_special: bool = False) -> int:
+        conn = self._get_conn()
+        try:
+            cursor = conn.execute(
+                "INSERT INTO menu_items (name, description, category, price, allergens, is_available, is_daily_special) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (name, description, category, price, allergens, int(is_available), int(is_daily_special)),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        finally:
+            conn.close()
+
+    def update_menu_item(self, item_id: int, **kwargs) -> None:
+        allowed = {"name", "description", "category", "price", "allergens", "is_available", "is_daily_special"}
+        fields = {k: v for k, v in kwargs.items() if k in allowed}
+        if not fields:
+            return
+        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        values = list(fields.values()) + [item_id]
+        conn = self._get_conn()
+        try:
+            conn.execute(f"UPDATE menu_items SET {set_clause} WHERE id = ?", values)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def delete_menu_item(self, item_id: int) -> None:
+        conn = self._get_conn()
+        try:
+            conn.execute("DELETE FROM menu_items WHERE id = ?", (item_id,))
+            conn.commit()
         finally:
             conn.close()
 

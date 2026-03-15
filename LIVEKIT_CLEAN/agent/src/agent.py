@@ -234,6 +234,50 @@ async def find_reservations(
         return "Error al buscar las reservas."
 
 
+@llm.function_tool(
+    description=(
+        "Get the restaurant menu. Can optionally filter by category: "
+        "'entrante', 'principal', 'postre', 'bebida', 'tapa', 'especial'. "
+        "Use this when a customer asks about the menu, dishes, prices, or allergens."
+    )
+)
+async def consultar_carta_restaurante(
+    category: str = "",
+) -> str:
+    """Return available menu items, optionally filtered by category."""
+    logger.info("Tool: consultar_carta_restaurante(category=%s)", category)
+    try:
+        items = db.get_menu(category=category if category else None)
+        if not items:
+            return "No hay platos disponibles en este momento en esa categoría."
+
+        current_category = ""
+        lines = []
+        for item in items:
+            if item['category'] != current_category:
+                current_category = item['category']
+                cat_labels = {
+                    'entrante': '🥗 Entrantes',
+                    'principal': '🍽️ Platos Principales',
+                    'postre': '🍰 Postres',
+                    'bebida': '🍷 Bebidas',
+                    'tapa': '🧂 Tapas',
+                    'especial': '⭐ Especiales del Día',
+                }
+                lines.append(f"\n{cat_labels.get(current_category, current_category)}:")
+            
+            allergen_info = f" [Alérgenos: {item['allergens']}]" if item['allergens'] else ""
+            special = " ⭐ ESPECIAL" if item.get('is_daily_special') else ""
+            lines.append(
+                f"  - {item['name']}: {item['description']}. "
+                f"Precio: {item['price']:.2f}€{allergen_info}{special}"
+            )
+        return "Carta del restaurante:" + "\n".join(lines)
+    except Exception as exc:
+        logger.error("consultar_carta_restaurante failed: %s", exc)
+        return "Error al obtener la carta del restaurante."
+
+
 # ---------------------------------------------------------------------------
 # System Instructions — Restaurant Personality
 # ---------------------------------------------------------------------------
@@ -258,6 +302,21 @@ def build_system_prompt() -> str:
     # Format placeholders if they exist
     base_prompt = base_prompt.replace("{restaurant_name}", name)
 
+    # --- Short-Term Memory: Inject recent call summaries ---
+    recent_calls = db.get_recent_calls(minutes=60)
+    memory_block = ""
+    if recent_calls:
+        memory_lines = []
+        for call in recent_calls[:5]:  # Limit to last 5 calls
+            summary = call.get('summary', 'Sin resumen')
+            result = call.get('result', 'unknown')
+            duration = call.get('duration_seconds', 0)
+            room = call.get('room_name', '')
+            memory_lines.append(f"  - Llamada [{room}]: {result} ({duration}s). Resumen: {summary}")
+        memory_block = "MEMORIA RECIENTE (llamadas última hora):\n" + "\n".join(memory_lines)
+    else:
+        memory_block = "MEMORIA RECIENTE: No ha habido llamadas en la última hora."
+
     return f"""{base_prompt}
 
 INFORMACIÓN IMPORTANTE:
@@ -268,6 +327,8 @@ INFORMACIÓN IMPORTANTE:
 - Días cerrado: {info.get('days_closed', 'domingo')}.
 - Máximo por mesa: {info.get('max_party_size', 10)} personas.
 
+{memory_block}
+
 REGLAS DE COMPORTAMIENTO:
 1. Siempre habla en español, con tono cálido y profesional.
 2. Tu nombre es Nikolina. Al contestar la llamada, SIEMPRE preséntate brevemente: "Hola, soy Nikolina, asistente virtual de {name}. ¿En qué puedo ayudarle?"
@@ -275,10 +336,11 @@ REGLAS DE COMPORTAMIENTO:
 4. SIEMPRE consulta disponibilidad ANTES de confirmar una reserva (usa check_availability).
 5. Confirma todos los datos antes de crear la reserva.
 6. Si no hay disponibilidad, sugiere horarios alternativos cercanos.
-7. Si preguntan por el menú, dirección u horarios, usa get_restaurant_info.
-8. Mantén las respuestas cortas y naturales — esto es una conversación telefónica.
-9. No inventes información. Si no sabes algo, di que va a consultarlo con el personal.
-10. Al despedirte, agradece la llamada y desea un buen día/noche."""
+7. Si preguntan por el menú, la carta o los platos, usa consultar_carta_restaurante.
+8. Si preguntan por la dirección u horarios, usa get_restaurant_info.
+9. Mantén las respuestas cortas y naturales — esto es una conversación telefónica.
+10. No inventes información. Si no sabes algo, di que va a consultarlo con el personal.
+11. Al despedirte, agradece la llamada y desea un buen día/noche."""
 
 
 # ---------------------------------------------------------------------------
@@ -293,7 +355,8 @@ def prewarm(proc: JobProcess) -> None:
 async def entrypoint(ctx: JobContext) -> None:
     try:
         logger.info(f"--- New Agent Session: {ctx.job.id} ---")
-        await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+        # Change to SUBSCRIBE_ALL to ingest user's Camera VideoTracks for Computer Vision
+        await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
 
         pipeline_cfg = db.get_active_pipeline_config()
         if not pipeline_cfg:
@@ -307,6 +370,8 @@ async def entrypoint(ctx: JobContext) -> None:
             }
 
         architecture = pipeline_cfg.get("architecture", "realtime")
+        system_prompt = build_system_prompt()
+
         class SessionTools(llm.ToolContext):
             @llm.function_tool(
                 description="Use THIS tool ONLY to hang up, end, or terminate the call when the user says goodbye or no longer needs assistance."
@@ -326,6 +391,7 @@ async def entrypoint(ctx: JobContext) -> None:
             cancel_reservation,
             get_restaurant_info,
             find_reservations,
+            consultar_carta_restaurante,
             dynamic_tools, # LiveKit tool context allows appending class instances
         ]
 
@@ -351,6 +417,41 @@ async def entrypoint(ctx: JobContext) -> None:
             session = AgentSession(
                 llm=model,
             )
+            
+            @agent.on("agent_speech_committed")
+            def on_agent_speech_committed(msg: llm.ChatMessage):
+                import json
+                import asyncio
+                if ctx.room.isconnected():
+                    content = getattr(msg, "content", "")
+                    if isinstance(content, list):
+                        content = " ".join([c.text for c in content if hasattr(c, "text")])
+                    elif not isinstance(content, str):
+                        content = str(content)
+                    payload = json.dumps({
+                        "id": getattr(msg, "id", "agent_msg"),
+                        "message": content,
+                        "isUser": False
+                    }).encode('utf-8')
+                    asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="lk-chat"))
+
+            @agent.on("user_speech_committed")
+            def on_user_speech_committed(msg: llm.ChatMessage):
+                import json
+                import asyncio
+                if ctx.room.isconnected():
+                    content = getattr(msg, "content", "")
+                    if isinstance(content, list):
+                        content = " ".join([c.text for c in content if hasattr(c, "text")])
+                    elif not isinstance(content, str):
+                        content = str(content)
+                    payload = json.dumps({
+                        "id": getattr(msg, "id", "user_msg"),
+                        "message": content,
+                        "isUser": True
+                    }).encode('utf-8')
+                    asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="lk-chat"))
+
             
         else:
             logger.info(f"Initializing Modular Voice Pipeline: {pipeline_cfg.get('name')}")
