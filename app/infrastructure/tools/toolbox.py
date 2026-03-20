@@ -75,6 +75,7 @@ async def analyze_vision_image(image_b64: str, prompt: str = None, source: str =
                 {"type": "text", "text": analysis_prompt},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}
             ]}],
+            max_tokens=600,
         )
         analysis = res.choices[0].message.content
         return analysis, f"/{path_name}" if path_name else None
@@ -270,20 +271,6 @@ TOOLS_SCHEMA = [
         "function": {
             "name": "telegram_read", 
             "description": "Lee los últimos mensajes recibidos en Telegram."
-        }
-    },
-    {
-        "type": "function", 
-        "function": {
-            "name": "whatsapp_send", 
-            "description": "Envía un mensaje por WhatsApp al usuario.", 
-            "parameters": {
-                "type": "object", 
-                "properties": {
-                    "message": {"type": "string"}
-                }, 
-                "required": ["message"]
-            }
         }
     },
     {

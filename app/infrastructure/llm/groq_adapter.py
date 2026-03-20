@@ -25,6 +25,14 @@ FALLBACK_MODEL = "qwen/qwen3-32b"
 MAX_RETRIES = 3
 MAX_TOOL_ITERATIONS = 5
 
+# Ollama local models (priority order — best → fastest)
+OLLAMA_MODELS = [
+    "glm-4.7-flash:latest",          # 19GB — best quality, fully local
+    "manoelectricaazul/llama-3-lexi-uncensored:8b",  # 4.9GB — uncensored, versatile
+    "llama3.2:3b",                   # 2GB — fast fallback
+]
+OLLAMA_BASE_URL = "http://localhost:11434"
+
 # OpenRouter models (used when Groq is completely unavailable)
 OPENROUTER_MODELS = [
     "meta-llama/llama-3.3-70b-instruct",
@@ -76,6 +84,47 @@ async def _call_openrouter(messages: list, model: str = None) -> dict:
     raise RuntimeError("All OpenRouter keys exhausted")
 
 
+async def _call_ollama(messages: list, model: str = None) -> str:
+    """
+    Calls local Ollama API as secondary fallback (before OpenRouter).
+    Zero rate limits, fully private. Requires Ollama running on localhost:11434.
+    """
+    model = model or OLLAMA_MODELS[0]
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            # Build the OpenAI-compatible Ollama endpoint
+            resp = await client.post(
+                f"{OLLAMA_BASE_URL}/v1/chat/completions",
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "max_tokens": 1024,
+                    "stream": False,
+                }
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data["choices"][0]["message"].get("content", "")
+            else:
+                logger.warning(f"Ollama error ({resp.status_code}): {resp.text[:200]}")
+                # Try next Ollama model
+                for fallback_model in OLLAMA_MODELS[1:]:
+                    if fallback_model == model:
+                        continue
+                    try:
+                        resp2 = await client.post(
+                            f"{OLLAMA_BASE_URL}/v1/chat/completions",
+                            json={"model": fallback_model, "messages": messages, "max_tokens": 1024}
+                        )
+                        if resp2.status_code == 200:
+                            return resp2.json()["choices"][0]["message"].get("content", "")
+                    except Exception:
+                        continue
+    except Exception as e:
+        logger.warning(f"Ollama unavailable: {e}")
+    raise RuntimeError("Ollama unavailable or all models failed")
+
+
 async def _call_groq_with_retry(messages: list, tools: list = None, model: str = PRIMARY_MODEL):
     """
     Calls Groq API with exponential backoff retry.
@@ -86,7 +135,8 @@ async def _call_groq_with_retry(messages: list, tools: list = None, model: str =
         try:
             kwargs = {
                 "model": current_model,
-                "messages": messages
+                "messages": messages,
+                "max_tokens": 1024,
             }
             if tools and current_model == PRIMARY_MODEL:
                 kwargs["tools"] = tools
@@ -121,8 +171,8 @@ class GroqAdapter(LLMPort):
         from datetime import datetime
         now = datetime.now().strftime("%A, %d de %B de %Y, %H:%M:%S")
         
-        if len(history) > 4:
-            history = history[-4:]
+        if len(history) > 6:
+            history = history[-6:]
 
         # --- PRE-EMPTIVE DATA INJECTION ---
         pre_injected_data = ""
@@ -143,15 +193,30 @@ class GroqAdapter(LLMPort):
         system_msg = {"role": "system", "content": SYSTEM_PROMPT + dynamic_context}
         msgs = [system_msg] + history + [{"role": "user", "content": user_text}]
 
-        # Try Groq first, fall back to OpenRouter
-        use_openrouter = False
+        # Fallback chain: Groq → Ollama (local) → OpenRouter (cloud)
+        use_fallback = None  # None = Groq OK, 'ollama', 'openrouter'
         try:
             chat, used_model = await _call_groq_with_retry(msgs, TOOLS_SCHEMA)
         except Exception as groq_err:
-            logger.warning(f"Groq completely unavailable, switching to OpenRouter: {groq_err}")
-            use_openrouter = True
+            logger.warning(f"Groq unavailable: {groq_err}. Trying Ollama local...")
+            use_fallback = 'ollama'
 
-        if use_openrouter:
+        if use_fallback:
+            # Try Ollama first (local, zero rate limits)
+            try:
+                fallback_content = await _call_ollama(msgs)
+                fallback_content = self._clean_content(fallback_content)
+                fallback_content = re.sub(r'<think>.*?</think>', '', fallback_content, flags=re.DOTALL).strip()
+                emotion = "neutral"
+                emotion_match = re.search(r'\[EMOTION:\s*([a-zA-Z]+)\]', fallback_content)
+                if emotion_match:
+                    emotion = emotion_match.group(1).lower()
+                    fallback_content = re.sub(r'\[EMOTION:\s*[a-zA-Z]+\]', '', fallback_content).strip()
+                return fallback_content or "Procesado localmente.", None, emotion
+            except Exception as ollama_err:
+                logger.warning(f"Ollama also unavailable: {ollama_err}. Trying OpenRouter...")
+
+            # OpenRouter as absolute last resort
             try:
                 or_content = await _call_openrouter(msgs)
                 or_content = self._clean_content(or_content)
@@ -163,8 +228,8 @@ class GroqAdapter(LLMPort):
                     or_content = re.sub(r'\[EMOTION:\s*[a-zA-Z]+\]', '', or_content).strip()
                 return or_content or "Procesado via OpenRouter.", None, emotion
             except Exception as or_err:
-                logger.error(f"OpenRouter also failed: {or_err}")
-                return "Todos los motores de IA están saturados. Inténtalo en unos minutos. [EMOTION: sad]", None, "sad"
+                logger.error(f"All engines failed: {or_err}")
+                return "Todos los motores de IA están saturados. Inténtalo en unos minutos.", None, "sad"
 
         msg = chat.choices[0].message
         final_text = "..."

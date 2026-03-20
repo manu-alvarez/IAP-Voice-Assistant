@@ -6,7 +6,7 @@ import {
 export const CORE_PLUGINS = [
   { id: 'vision', label: '(V)ision Eye', status: 'ACTIVE', color: '#ff3c3c' },
   { id: 'search', label: '(W)eb Search', status: 'STANDBY', color: '#3b82f6' },
-  { id: 'workspace', label: '(W)orkspace', status: 'CONNECTED', color: '#a855f7' },
+  { id: 'workspace', label: '(O)ffice Workspace', status: 'CONNECTED', color: '#a855f7' },
   { id: 'imap', label: '(Email) IMAP', status: 'SYNCED', color: '#00d4ff' },
   { id: 'terminal', label: '(T)erminal', status: 'READY', color: '#10b981' },
 ];

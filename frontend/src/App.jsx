@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import NeuralOrb from './components/NeuralOrb.jsx';
+import Orb3D from './components/Orb3D.jsx';
 import './index.css';
 
 // API Configuration from environment variables
@@ -29,6 +30,7 @@ function App() {
   const [visionImage, setVisionImage] = useState(null);
   const [userInput, setUserInput] = useState('');
   const [showTools, setShowTools] = useState(false);
+  const [useOrb3D, setUseOrb3D] = useState(false);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -350,12 +352,28 @@ function App() {
         <div className="center-panel relative w-full h-full">
           <div className="orb-wrapper w-full h-full flex flex-col items-center justify-center">
             
-            {/* The Animated Plasma Orb */}
-            <NeuralOrb audioLevel={volume} orbState={orbState} />
+            {/* The Animated Orb — Switch between NeuralOrb (CSS) and Orb3D (THREE.js) */}
+            {useOrb3D ? (
+              <Orb3D audioLevel={volume} orbState={orbState} />
+            ) : (
+              <NeuralOrb audioLevel={volume} orbState={orbState} />
+            )}
             
             <div className="text-center mt-8">
-              <div className="neural-title-v7">IAPuta OS:</div>
+              <div 
+                className="neural-title-v7 cursor-pointer select-none" 
+                onClick={() => setUseOrb3D(!useOrb3D)}
+                title={`Orbe: ${useOrb3D ? '3D Plasma' : 'Neural CSS'} — Click para cambiar`}
+              >
+                IAPuta OS:
+              </div>
               <div className="text-white/50 text-sm tracking-[0.3em] mt-2 uppercase font-mono">Welcome to the Next Level</div>
+              <div 
+                className="text-[9px] text-white/20 mt-1 font-mono tracking-widest cursor-pointer hover:text-white/40 transition-colors"
+                onClick={() => setUseOrb3D(!useOrb3D)}
+              >
+                [{useOrb3D ? '3D PLASMA' : 'NEURAL CSS'}] ↻
+              </div>
             </div>
 
             {/* Transcript overlay — only show system/error/user/vision, NOT bot text responses */}

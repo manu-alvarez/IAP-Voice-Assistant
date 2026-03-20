@@ -61,5 +61,31 @@ def clear_history():
     conn.commit()
     conn.close()
 
+
+async def cleanup_task(idle_minutes: int = 10):
+    """
+    Background task: trims chat history entries older than idle_minutes.
+    Runs every 60 seconds. Referenced by main.py lifespan.
+    """
+    import asyncio
+    while True:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM chat_history WHERE timestamp < datetime('now', ?)",
+                (f'-{idle_minutes} minutes',)
+            )
+            deleted = cursor.rowcount
+            conn.commit()
+            conn.close()
+            if deleted > 0:
+                import logging
+                logging.getLogger(__name__).info(f"Memory cleanup: {deleted} old messages purged.")
+        except Exception:
+            pass
+        await asyncio.sleep(60)
+
+
 # Inicializamos las tablas al importar el módulo
 init_db()

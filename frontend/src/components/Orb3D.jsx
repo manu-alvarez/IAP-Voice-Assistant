@@ -1,16 +1,17 @@
-import { useEffect, useRef, memo, useMemo } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import * as THREE from 'three';
 
 /**
  * LIVING ORB 3.0 — The Hex-Plasma Singularity
- * A biometric, sentient energy entity.
- * Features: 
- * - Honeycomb shell (Hexagonal grid)
- * - Fluidic Plasma Core (Nebula)
- * - Organic Breathing Cycle
- * - Volumetric Scattering Glow
+ * A biometric, sentient energy entity with THREE.js custom shaders.
+ * Props match NeuralOrb interface for easy switching:
+ *   audioLevel (0-1), orbState ('ready'|'listening'|'processing'|'speaking'|'error')
  */
-function Orb3D({ state = 'ready', emotionColor = 0xa855f7, volume = 0 }) {
+function Orb3D({ audioLevel = 0, orbState = 'ready' }) {
+  const emotionColor = orbState === 'error' ? 0xff3c3c 
+    : orbState === 'listening' ? 0xff3c3c 
+    : orbState === 'processing' ? 0x3b82f6 
+    : 0xa855f7;
   const mountRef = useRef(null);
 
   // ── SHADERS ──
@@ -186,7 +187,6 @@ function Orb3D({ state = 'ready', emotionColor = 0xa855f7, volume = 0 }) {
           vec3 i1 = min( g.xyz, l.zxy );
           vec3 i2 = max( g.xyz, l.zxy );
           vec3 x1 = x0 - i1 + C.xxx;
-          vec2 x12 = x1.xy; // Added to avoid potential issues in some environments
           vec3 x2 = x0 - i2 + C.yyy;
           vec3 x3 = x0 - D.yyy;
           i = mod289(i);
@@ -346,24 +346,23 @@ function Orb3D({ state = 'ready', emotionColor = 0xa855f7, volume = 0 }) {
 
       // State Mapping
       let stateVal = 0;
-      if (state === 'speaking') stateVal = 1;
-      else if (state === 'listening') stateVal = 2;
-      else if (state === 'thinking') stateVal = 3;
+      if (orbState === 'speaking') stateVal = 1;
+      else if (orbState === 'listening') stateVal = 2;
+      else if (orbState === 'processing') stateVal = 3;
       coreUniforms.uState.value = stateVal;
 
-      // Dynamics
-      if (state === 'speaking') {
-        const v = volume / 50; // Normalize volume
+      // Dynamics — audioLevel is already 0-1 normalized
+      if (orbState === 'speaking') {
+        const v = audioLevel;
         coreUniforms.uIntensity.value = 0.4 + v;
         coreUniforms.uVolume.value = v;
         shell.scale.setScalar(1 + v * 0.3);
         ring1.scale.setScalar(1 + v * 0.6);
         ring2.scale.setScalar(1 + v * 0.6);
         
-        // Add some vibration to rings based on volume
         ring1.rotation.x = Math.sin(t * 10) * v * 0.5;
         ring2.rotation.y = Math.cos(t * 12) * v * 0.5;
-      } else if (state === 'listening') {
+      } else if (orbState === 'listening') {
         coreUniforms.uIntensity.value = 0.5 + Math.sin(t * 10) * 0.2;
         shell.scale.setScalar(1.05 + Math.sin(t * 5) * 0.02);
       } else {
@@ -392,10 +391,9 @@ function Orb3D({ state = 'ready', emotionColor = 0xa855f7, volume = 0 }) {
       if (container && renderer.domElement) container.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [state, emotionColor, volume]);
+  }, [orbState, emotionColor, audioLevel]);
 
-
-  return <div ref={mountRef} className="w-full h-full" />;
+  return <div ref={mountRef} className="w-full h-full" style={{ minHeight: '300px' }} />;
 }
 
 export default memo(Orb3D);
